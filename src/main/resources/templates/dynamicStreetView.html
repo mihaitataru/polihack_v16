@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Maps Street View</title>
+    <style>
+        html, body, #street-view {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #no-data {
+            display: none;
+            text-align: center;
+            font-size: 20px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div id="street-view"></div>
+<div id="no-data">No Street View data available at this location.</div>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    var apiKey = [[${apiKey}]];
+
+    var script = document.createElement('script');
+    script.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey;
+    document.head.appendChild(script);
+
+    script.onload = function() {
+        checkStreetViewAvailability([[${latitude}]], [[${longitude}]]);
+    };
+
+    function checkStreetViewAvailability(lat, lng, radius = 50, maxRadius = 500) {
+        const position = { lat, lng };
+        const streetViewService = new google.maps.StreetViewService();
+
+        streetViewService.getPanorama({ location: position, radius: radius }, (data, status) => {
+            if (status === google.maps.StreetViewStatus.OK) {
+                initStreetView(data.location.latLng);
+            } else if (radius < maxRadius) {
+                checkStreetViewAvailability(lat, lng, radius + 5, maxRadius);
+            } else {
+                document.getElementById('street-view').style.display = 'none';
+                document.getElementById('no-data').style.display = 'block';
+            }
+        });
+    }
+
+    function initStreetView(position) {
+        const panorama = new google.maps.StreetViewPanorama(
+            document.getElementById('street-view'),
+            {
+                position: position,
+                pov: { heading: 165, pitch: 0 },
+                zoom: 1,
+                motionTracking: false,
+                motionTrackingControl: false,
+                disableDefaultUI: true,
+                linksControl: false,
+                clickToGo: false,
+                showRoadLabels: false
+            }
+        );
+    }
+    /*]]>*/
+</script>
+</body>
+</html>
